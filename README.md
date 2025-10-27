@@ -66,7 +66,9 @@ The project was developed using **Python** as the programming language. All sour
 
 To connect and control the robot remotely, we used the `paramiko` package, which allowed us to access the TXT 4.0 controller via SSH. 
 
-To make this work, we connected both the robot and our laptop to the same mobile hotspot, so they were on the same network. This was necessary because we had to include **the controller’s IP address** in the code. 
+We connect the TXT 4.0 controller and the laptop to the same local Wi-Fi and keep the controller updated before use. We pair by entering the controller’s IP address (shown on the device under Info → Wi-Fi) and the API key (Settings → API key). Keeping both devices on one local network avoids router restrictions that block cross-network access. This was necessary because we had to include **the controller’s IP address** in the code.
+
+If the controller does not power on, we first recheck wiring and battery charge, then proceed with software troubleshooting.
 
 During the early stages of development, we tested our code by running scripts directly through the command line (using *python scripts/upload_and_run.py*). 
 
@@ -109,6 +111,9 @@ txt_factory.init_counter_factory()
 txt_factory.init_usb_factory()
 txt_factory.init_camera_factory()
 ```
+### Convention
+We define forward as the robot moving with left/right wheels spinning in opposite directions (mirrored). Positive steering angles turn the front wheels to the left; positive heading change is a left turn. This convention keeps logs, diagrams, and odometry consistent across modules. We use time-based 90° turns as a baseline and re-check them whenever tire friction, weight, or surface change. We treat right/left turns as separate calibrations and keep a margin to avoid over-rotation in tight spaces.
+
 
 ## Power and Sense Management
 
@@ -118,14 +123,21 @@ The robot has **three ultrasonic sensors**, each connected to a different port: 
 
 Each sensor consists of a dual transducer that sends and receives ultrasonic pulses, enabling accurate distance calculations in real time. The sensors were securely connected using the standard plug-and-cable system provided in the kit, following the official `fischertechnik` assembly guidelines. 
 
-Their placement was chosen to provide full coverage on three sides of the robot, ensuring it can orient itself within confined environments and react to dynamic obstacles.
+Their placement was chosen to provide full coverage on three sides of the robot, ensuring it can orient itself within confined environments and react to dynamic obstacles. For wall-following we side-mount the ultrasonic sensor to look along the wall rather than straight ahead. This stabilizes the distance signal and reduces spurious spikes from corners and cross-traffic. 
 
 Here is a simplified version of the **electrical scheme** of our robot:
 <p align="center">
   <img src="images/el_scheme.png" alt="Electrical scheme" width="300"/>
 </p>  
 
+## Troubleshooting
+**Robot pulls left/right**: re-center steering and re-fit counts-per-meter on the current surface.
 
+**Late reactions**: check FPS stability and CPU load; keep frame size fixed.
+
+**No network**: verify same LAN, IP, credentials, and that the controller UI shows Wi-Fi “ready”.
+
+**Noisy distance readings**: re-aim the ultrasonic sideways for wall-follow and check for soft mounts or loose brackets.
 
 
 ## Obstacle Detection
@@ -178,6 +190,17 @@ while (counter < 12):
 
 In this project, we used the `OpenCV library` for computer vision to detect obstacles of specific colors and to measure their height within the camera frame.
 
+We initialize the camera via the TXT controller, disable rotation, fix the resolution to 320×240 and 15 fps, and start the stream. We use the `TXT_M_USB1_1_camera` object as the device interface; once we call `start()`, frames are available to the CV pipeline.
+Fixing resolution and FPS stabilizes latency and aspect ratio, which makes contour detection and centroid tracking consistent across runs.
+
+```python
+TXT_M_USB1_1_camera.set_rotate(False)
+TXT_M_USB1_1_camera.set_height(240)
+TXT_M_USB1_1_camera.set_width(320)
+TXT_M_USB1_1_camera.set_fps(15)
+TXT_M_USB1_1_camera.start()
+```
+
 Before detecting the color, we convert each frame from the default **BGR (Blue, Green, Red)** format to the **HSV (Hue, Saturation, Value)** color space. This improves color detection accuracy under different lighting conditions by separating color (hue) from brightness (value). This way we made sure that the color detection does not depend on the brightness and lighting in the room.
 
 After developing the **color recognition logic based on pixel counting**, we concluded that we could try implementing this logic for turns and direction decisions in the **Open Challenge**. The color of the line at the turn that the robot detects first we called the main color. Based on this color, the robot turns in the predefined direction. If the main color is **blue**, it turns left; if the main color is **orange**, it turns right. 
@@ -221,7 +244,7 @@ GREEN_UPPER = np.array([80, 255, 255])
 
 After, we split the frame the camera sees into three parts, left, right and center.
 
-The `max_height()` function calculates the height of the tallest detected colored object by finding external contours in the mask. It returns `h` which is the maximum bounding rectangle height in that area.
+The `max_height()` function calculates the height of the tallest detected colored object by finding external contours in the mask. It returns `h` which is the maximum bounding rectangle height in that area. Next, we extract **contours** to describe object boundaries. A contour is an ordered set of points that traces the outline of a blob—the border between foreground and background. We use contours to compute the object centroid for tracking, to estimate size and shape (e.g., perimeter, area, circularity), and to validate detections by filtering out noise and irregular blobs before downstream actions.
 
 Combining the HSV value of red and green and the height of the shape the camera sees, we counted **the number of pixels**. We used this logic to determine which obstacle is the closest to the robot, meaning the bigger number of pixels of a certain color point to the traffic sign in front of the camera. 
 
@@ -238,3 +261,14 @@ def avoid_obstacle():
     print("The closest obstacle:", color_near)
 ```
 
+### Post-Competition Observations & Control Refactor
+After the **national competition** we observed that ultrasonic readings **can be unstable due to echoes** and other interference, which occasionally produces spurious large values. Therefore, we apply exponential smoothing to reduce the impact of noise.
+
+```python
+if distance_left < 1000:
+    filtered_distance_left  = alpha * filtered_distance_left  + (1 - alpha) * distance_left
+if distance_right < 1000:
+    filtered_distance_right = alpha * filtered_distance_right + (1 - alpha) * distance_right
+```
+
+To improve wall-following we are migrating to a **PID controller** fed by left/right ultrasonic distances.
