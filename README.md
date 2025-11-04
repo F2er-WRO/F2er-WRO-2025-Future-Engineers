@@ -66,6 +66,16 @@ We connect the TXT 4.0 controller and the laptop to the same local Wi-Fi and kee
 
 If the controller does not power on, we first recheck wiring and battery charge, then proceed with software troubleshooting.
 
+### Troubleshooting
+Robot pulls left/right: re-center steering and re-fit counts-per-meter on the current surface.
+
+Late reactions: check FPS stability and CPU load; keep frame size fixed.
+
+No network: verify same LAN, IP, credentials, and that the controller UI shows Wi-Fi “ready”.
+
+Noisy distance readings: re-aim the ultrasonic sideways for wall-follow and check for soft mounts or loose brackets.
+
+### Testing
 During the early stages of development, we tested our code by running scripts directly through the command line (using *python scripts/upload_and_run.py*). 
 
 To start the robot in a way the rules of the competition provide, we followed these steps:
@@ -86,6 +96,8 @@ The images below show how to robot starts/stops.
 - `fischertechnik` – to communicate with motors, servos, and sensors
 
 ## Mobility Management 
+
+### Design
 We decided to use the official `fischertechnik STEM Coding Competition kit`, which was specifically developed for this "Future Engineers" competition category of the World Robot Olympiad. The base was assembled strictly following the official step-by-step instructions provided in the manual, ensuring stable construction, proper wheel alignment, and optimal weight distribution.
 
 The image displays **the specifications of the components** used from the specified set.
@@ -97,6 +109,11 @@ The drive motor is initialized using the encoder motor factory. Additionally, a 
 
 The steering mechanism is controlled by a separate servomotor **Micro Servo 4.8/6V**, which allows the robot to adjust its direction in real time based on obstacle detection and navigation logic.
 
+<p align="center">
+  <img src="images/servo1.jpg" alt="Set parts" width="170"/>
+  <img src="images/servo2.jpg" alt="Set parts" width="230"/>
+</p>  
+
 We began assembling the robot by constructing the lower base frame using red and black structural blocks, followed by adding the rear wheels with axle holders and spacers for stability. Next, we installed the encoder motor to complete the drive system. 
 
 The front steering mechanism is supported by the Micro Servo. The front wheels were then attached to the steering links, completing the basic mobility structure. 
@@ -105,6 +122,8 @@ Afterwards, we positioned the **TXT 4.0 controller** on top of the base frame an
 <p align="center">
   <img src="images/controller.jpg" alt="Cont" width="240"/>
 </p>
+
+
 At the start of the program, we initialize all the hardware components using the official `fischertechnik` Python library. These include the controller, sensors, motors, camera, and counters.
 
 ```python
@@ -117,32 +136,43 @@ txt_factory.init_usb_factory()
 txt_factory.init_camera_factory()
 ```
 ### Vehicle Movement
-We define forward as the robot moving with left/right wheels spinning in opposite directions (mirrored). Positive steering angles turn the front wheels to the left; positive heading change is a left turn. This convention keeps logs, diagrams, and odometry consistent across modules. We use time-based 90° turns as a baseline and re-check them whenever tire friction, weight, or surface change. We treat right/left turns as separate calibrations and keep a margin to avoid over-rotation in tight spaces.
+We define **forward** as the robot moving with left/right wheels spinning in opposite directions (mirrored). 
+
+Positive steering angles turn the front wheels to the left; positive heading change is a left turn. This convention keeps logs, diagrams, and odometry consistent across modules. 
+
+We use time-based 90° turns as a baseline and re-check them whenever tire friction, weight, or surface change. We treat right/left turns as separate calibrations and keep a margin to avoid over-rotation in tight spaces.
 
 
 ## Power and Sense Management
 
+### Power Source
 The robot is powered by an **8.4V 1800mAh NiMH battery pack** with short circuit protection, recharged using the standard charger from the robot kit introduced earlier.
 
+<p align="center">
+  <img src="images/battery.jpg" alt="Battery" width="240"/>
+</p>  
+
+### Sensors
 The robot has **three ultrasonic sensors**, each connected to a different port: ***I1 (front), I5 (right), and I3 (left)***. 
+<p align="center">
+  <img src="images/sensor.jpg" alt="Sensor" width="240"/>
+</p>  
 
 Each sensor consists of a dual transducer that sends and receives ultrasonic pulses, enabling accurate distance calculations in real time. The sensors were securely connected using the standard plug-and-cable system provided in the kit, following the official `fischertechnik` assembly guidelines. 
 
-Their placement was chosen to provide full coverage on three sides of the robot, ensuring it can orient itself within confined environments and react to dynamic obstacles. For wall-following we side-mount the ultrasonic sensor to look along the wall rather than straight ahead. This stabilizes the distance signal and reduces spurious spikes from corners and cross-traffic. 
+**Their placement was chosen** to provide full coverage on three sides of the robot, ensuring it can orient itself within confined environments and react to dynamic obstacles. For wall-following we side-mount the ultrasonic sensor to look along the wall rather than straight ahead. This stabilizes the distance signal and reduces spurious spikes from corners and cross-traffic. 
+
+### Wiring diagram
 
 Here is a simplified version of the **electrical scheme** of our robot:
 <p align="center">
   <img src="images/el_scheme.png" alt="Electrical scheme" width="300"/>
 </p>  
 
-## Troubleshooting
-**Robot pulls left/right**: re-center steering and re-fit counts-per-meter on the current surface.
-
-**Late reactions**: check FPS stability and CPU load; keep frame size fixed.
-
-**No network**: verify same LAN, IP, credentials, and that the controller UI shows Wi-Fi “ready”.
-
-**Noisy distance readings**: re-aim the ultrasonic sideways for wall-follow and check for soft mounts or loose brackets.
+The table below illustrates where each device is connected to the port, as well as its role in our robot configuration.
+<p align="center">
+  <img src="images/wiring_d.jpg" alt="Wiring" width="650"/>
+</p>  
 
 
 ## Obstacle Detection
@@ -278,5 +308,3 @@ if distance_right < 1000:
 We use exponential smoothing to blend the previous filtered value with the new measurement:
 filteredₜ = α · filteredₜ₋₁ + (1 − α) · measurementₜ.
 The α parameter sets the trade-off: a higher α yields slower response but stronger noise suppression; a lower α reacts faster but filters less.
-
-To improve wall-following we are migrating to a **PID controller** fed by left/right ultrasonic distances.
