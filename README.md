@@ -264,6 +264,11 @@ def zavoj_boja(frame):
 
 While navigating around the inner wall, we wanted the robot to maintain a consistent distance from the inner wall. To enable this, we created a variable called `udaljenost_prva` (translated as initial_distance), in which we stored the sensor reading at the starting point from either the left or right side, depending on the main color. This helped us improve the accuracy of returning to the starting position after completing three laps.
 
+The image bellow is the robot in action running the following code successfully.
+<p align="center">
+  <img src="images/challenge.jpg" alt="Challenge" width="250"/>
+</p>  
+
 
 For the **Obstacle Challenge**, we also need to define specific HSV value ranges for detecting **red** and **green** regions. Red is split into two ranges due to its position at both ends of the hue spectrum:
 
