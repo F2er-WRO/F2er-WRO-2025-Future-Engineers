@@ -38,14 +38,9 @@ The vehicle is built using the `fischertechink STEM Coding Competition Robot Kit
 
 
 
-
-
-
-
-
 ## Performance Videos
 
-The videos are public and posted on YouTube.
+The videos are public and posted on YouTube. 
 
 1) Open Challenge: https://youtube.com/shorts/lAiTz7U1KZs?feature=share
 
@@ -54,9 +49,9 @@ The videos are public and posted on YouTube.
 
 
 ## GitHub utilization
-Our repository is on the following link: https://github.com/F2er-WRO/Project
+Our repository is on the following link: https://github.com/F2er-WRO/F2er-WRO-2025-Future-Engineers
 
-It includes the codes for the robot setup such as camera, controller and display. Two codes for the upload and run process, as well as the `open_challenge.py` and `obstacle_challenge.py`. 
+It includes the codes for the robot setup such as camera, controller and display. Two codes for the upload and run process, as well as the `open_challenge.py` and `obstacle_challenge.py`. Here we also have the images and videos organized in separate folders. 
 
 Lastly, the repository includes the README.md file suitable with the following rules of the WRO Organization. 
 
@@ -78,6 +73,13 @@ To start the robot in a way the rules of the competition provide, we followed th
 1. In VS Code, after writing and saving the Python files, connect to the robot using the **"Upload and Run File"** option to transfer the Python script to the controller and start execution.
 2. The robot will automatically begin executing the code once the upload completes and by clicking the run button on its interface.
 
+The images below show how to robot starts/stops.
+
+<p align="center">
+  <img src="images/start.jpg" alt="Start" width="389"/>
+  <img src="images/stop.jpg" alt="Stop" width="310"/>
+</p>
+
 ### Additional Python Libraries Used:
 - `opencv-python` – for image processing and color detection
 - `numpy` – for numerical operations and array handling
@@ -88,7 +90,7 @@ We decided to use the official `fischertechnik STEM Coding Competition kit`, whi
 
 The image displays **the specifications of the components** used from the specified set.
 <p align="center">
-  <img src="images/fischertechnik_set_parts.jpg" alt="Set parts" width="300"/>
+  <img src="images/fischertechnik_set_parts.jpg" alt="Set parts" width="500"/>
 </p>  
 
 The drive motor is initialized using the encoder motor factory. Additionally, a motor step counter is created and linked to the encoder motor to track the number of steps taken during movement. 
@@ -100,7 +102,9 @@ We began assembling the robot by constructing the lower base frame using red and
 The front steering mechanism is supported by the Micro Servo. The front wheels were then attached to the steering links, completing the basic mobility structure. 
 
 Afterwards, we positioned the **TXT 4.0 controller** on top of the base frame and connected all cables from the sensors, motor, camera, and servo to the corresponding ports.
-
+<p align="center">
+  <img src="images/controller.jpg" alt="Cont" width="240"/>
+</p>
 At the start of the program, we initialize all the hardware components using the official `fischertechnik` Python library. These include the controller, sensors, motors, camera, and counters.
 
 ```python
@@ -112,7 +116,7 @@ txt_factory.init_counter_factory()
 txt_factory.init_usb_factory()
 txt_factory.init_camera_factory()
 ```
-### Convention
+### Vehicle Movement
 We define forward as the robot moving with left/right wheels spinning in opposite directions (mirrored). Positive steering angles turn the front wheels to the left; positive heading change is a left turn. This convention keeps logs, diagrams, and odometry consistent across modules. We use time-based 90° turns as a baseline and re-check them whenever tire friction, weight, or surface change. We treat right/left turns as separate calibrations and keep a margin to avoid over-rotation in tight spaces.
 
 
